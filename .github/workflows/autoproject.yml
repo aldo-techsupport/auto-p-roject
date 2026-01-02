@@ -1,0 +1,38 @@
+name: Auto Commit Random 24H (Multi Commit)
+
+on:
+  schedule:
+    - cron: "0 */4 * * *" # jalan tiap 4 jam (6x sehari)
+  workflow_dispatch:
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Random delay (max 30 minutes)
+        run: |
+          DELAY=$((RANDOM % 1800))
+          echo "Sleep $DELAY seconds"
+          sleep $DELAY
+
+      - name: Decide commit or skip
+        run: |
+          RAND=$((RANDOM % 100))
+          echo "RANDOM=$RAND" >> $GITHUB_ENV
+
+      - name: Update file
+        if: env.RANDOM < 60
+        run: |
+          echo "- Update $(date '+%Y-%m-%d %H:%M:%S')" >> activity.md
+
+      - name: Commit and push
+        if: env.RANDOM < 60
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add activity.md
+          git commit -m "chore: auto update $(date '+%H:%M')" || exit 0
+          git push
